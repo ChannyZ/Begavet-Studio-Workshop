@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SutraGlow - 晶石几何数字美学工坊</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500;700&display=swap');
+        body { font-family: 'Noto Serif SC', serif; background-color: #F7F5F0; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-[#3A332C] min-h-screen flex flex-col justify-between antialiased selection:bg-[#E8E2D5]">
+
+    <audio id="bgm" loop src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav" preload="auto"></audio>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 pb-24 md:pb-6 flex flex-col lg:flex-row gap-6 h-[calc(100vh-4rem)] overflow-hidden">
+        
+        <div class="flex-1 bg-[#FCFAF7] rounded-[32px] border border-[#EBE5DA] p-6 flex flex-col overflow-hidden relative shadow-xs">
+            
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 id="page-title" class="text-xl font-medium tracking-widest text-[#2B2520]">靈感工坊</h1>
+                    <p id="page-desc" class="text-[10px] text-[#9C8F80] tracking-wider mt-0.5">极简北欧风 · 还原天然晶石真实流光</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleBGM()" id="bgm-btn" class="p-2.5 bg-[#F2EDE2] hover:bg-[#E8E1D2] rounded-full text-[#54493F] transition-all">
+                        <i data-lucide="volume-x" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="toggleAI()" class="p-2.5 bg-[#2B2520] text-[#FCFAF7] hover:bg-[#1C1815] rounded-full transition-all">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-match" class="page-view flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
+                
+                <div class="flex-1 flex flex-col items-center justify-center bg-[#F2ECE0] rounded-2xl p-4 border border-[#E5DCBE] relative">
+                    <div class="relative w-80 h-80 md:w-[410px] md:h-[410px] rounded-full bg-[#E5DCBE] shadow-[inset_0_4px_12px_rgba(0,0,0,0.06),0_12px_36px_rgba(40,30,20,0.12)] flex items-center justify-center border-4 border-[#DCD1B1]">
+                        <div class="absolute w-[88%] h-[88%] rounded-full bg-[#E8E0C4] shadow-inner"></div>
+                        <div class="absolute w-[76%] h-[76%] rounded-full border-[22px] border-[#DECFA4] opacity-50 shadow-[inset_0_3px_10px_rgba(0,0,0,0.08)]"></div>
+                        <div class="absolute w-28 h-28 bg-[#DECFA4] rounded-full shadow-[0_2px_5px_rgba(0,0,0,0.05),inset_0_4px_8px_rgba(0,0,0,0.1)] z-0 flex flex-col items-center justify-center border border-[#CEBF93]">
+                            <span id="match-status" class="text-[10px] font-medium tracking-widest text-[#736453]">正在设计</span>
+                            <span id="bead-count" class="text-xs font-bold text-[#2B2520] mt-0.5">0 / 15</span>
+                        </div>
+                        <canvas id="beadCanvas" width="410" height="410" class="w-full h-full z-10 cursor-pointer relative"></canvas>
+                    </div>
+                    
+                    <div class="w-full max-w-sm mt-5 space-y-3 bg-[#FCFAF7]/90 backdrop-blur-md p-3.5 rounded-xl border border-[#EBE5DA]">
+                        <div>
+                            <div class="flex justify-between text-[11px] text-[#6E6152] mb-1">
+                                <span>选择净手围 (Wrist Size)</span>
+                                <span class="font-bold" id="val-wrist">15 cm</span>
+                            </div>
+                            <input type="range" id="slider-wrist" min="13" max="19" step="0.5" value="15" class="w-full accent-[#2B2520] h-[2px] bg-[#E3D9C8] cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[11px] text-[#6E6152] mb-1">
+                                <span>选择珠子直径 (Bead Size)</span>
+                                <span class="font-bold" id="val-bead">10 mm</span>
+                            </div>
+                            <input type="range" id="slider-bead" min="8" max="14" step="2" value="10" class="w-full accent-[#2B2520] h-[2px] bg-[#E3D9C8] cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-72 flex flex-col bg-[#FCFAF7] border border-[#EBE5DA] rounded-2xl p-4 overflow-hidden">
+                    <div class="flex justify-between items-center mb-3 flex-shrink-0">
+                        <h3 class="text-xs font-bold text-[#6E6152] tracking-widest">天然晶石图鉴库</h3>
+                        <button onclick="clearCurrentBeads()" class="text-[10px] text-[#9C8F80] hover:text-red-500 underline tracking-wider">清空画布</button>
+                    </div>
+                    <div class="flex-1 grid grid-cols-3 md:grid-cols-2 gap-2 overflow-y-auto no-scrollbar pr-1" id="crystal-selector">
+                        </div>
+                    
+                    <button id="btn-save-asset" onclick="saveToAssets()" disabled class="mt-4 w-full bg-[#C2BBB0] text-[#FCFAF7] py-3 rounded-xl text-xs tracking-widest transition-all cursor-not-allowed">
+                        <i data-lucide="lock" class="w-3.5 h-3.5 inline mr-1"></i>填满方可归档作品
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-community" class="page-view flex-1 hidden overflow-y-auto no-scrollbar">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-6" id="community-grid"></div>
+            </div>
+
+            <div id="view-destiny" class="page-view flex-1 hidden flex-col items-center justify-center max-w-xl mx-auto w-full">
+                <div class="w-full bg-[#F2ECE0] border border-[#E5DCBE] rounded-2xl p-6 text-center space-y-5">
+                    <div class="w-10 h-10 bg-[#E8E0C4] text-[#2B2520] rounded-full flex items-center justify-center mx-auto"><i data-lucide="compass" class="w-5 h-5"></i></div>
+                    <div>
+                        <h2 class="text-sm font-bold tracking-widest text-[#2B2520]">生辰八字本命晶石测算</h2>
+                        <p class="text-[10px] text-[#9C8F80] mt-1">天星引航，依生辰推衍喜用神能量互补阵法</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-left">
+                        <div class="col-span-2">
+                            <label class="text-[10px] text-[#6E6152]">出生日期 (公历/农历)</label>
+                            <input type="date" id="destiny-date" class="w-full mt-1 px-3 py-2 bg-[#FCFAF7] border border-[#EBE5DA] rounded-xl text-xs focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-[#6E6152]">诞生时辰</label>
+                            <select id="destiny-time" class="w-full mt-1 px-3 py-2 bg-[#FCFAF7] border border-[#EBE6DD] rounded-xl text-xs focus:outline-none">
+                                <option value="子时">子时 (23:00-01:00)</option>
+                                <option value="卯时">卯时 (05:00-07:00)</option>
+                                <option value="午时">午时 (11:00-13:00)</option>
+                                <option value="酉时">酉时 (17:00-19:00)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-[#6E6152]">乾坤占术</label>
+                            <div class="flex gap-2 mt-1">
+                                <button onclick="setGender('乾造')" id="gender-m" class="flex-1 py-2 text-center text-xs rounded-xl bg-[#2B2520] text-white transition-all">乾造(男)</button>
+                                <button onclick="setGender('坤造')" id="gender-f" class="flex-1 py-2 text-center text-xs rounded-xl bg-white text-[#6E6152] border border-[#EBE5DA] transition-all">坤造(女)</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="calculateDestiny()" class="w-full bg-[#2B2520] text-white py-3 rounded-xl text-xs tracking-widest hover:bg-[#1C1815] transition-all">开启本命因缘推衍</button>
+                    <div id="destiny-result" class="hidden text-left bg-[#FCFAF7] border border-[#EBE5DA] p-4 rounded-xl space-y-3"></div>
+                </div>
+            </div>
+
+            <div id="view-assets" class="page-view flex-1 hidden overflow-y-auto no-scrollbar">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="assets-grid"></div>
+                <div id="assets-empty" class="text-center py-16 text-[#9C8F80] text-xs">
+                    <i data-lucide="archive" class="w-6 h-6 mx-auto mb-2 opacity-40"></i>
+                    尚无数字资产沉淀。
+                </div>
+            </div>
+        </div>
+
+        <div id="ai-panel" class="w-full lg:w-76 bg-[#FCFAF7] rounded-[32px] border border-[#EBE5DA] p-4 flex flex-col h-[350px] lg:h-full hidden">
+            <div class="flex justify-between items-center pb-2 border-b border-[#F2EDE2] mb-3">
+                <div class="flex items-center gap-1.5 text-xs font-bold text-[#2B2520]"><i data-lucide="bot" class="w-4 h-4"></i><span>AI 晶石叙事顾问</span></div>
+                <button onclick="toggleAI()" class="text-[#9C8F80] hover:text-[#2B2520]"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div id="ai-chat" class="flex-1 overflow-y-auto space-y-3 pr-1 text-[11px] no-scrollbar">
+                <div class="bg-[#F2ECE0] p-3 rounded-xl border border-[#E5DCBE] leading-relaxed">
+                    您好，我是灵感AI。我可以依据情绪、星盘、穿搭给出多宝手串的逐颗混搭巧思。输入“带我去社区”或者“推荐一套搞钱多宝串”。
+                </div>
+            </div>
+            <div class="flex gap-2 mt-3">
+                <input type="text" id="ai-input" placeholder="输入对话或快捷指令..." class="flex-1 px-3 py-2 bg-[#F2ECE0] border border-[#E5DCBE] rounded-xl text-xs focus:outline-none">
+                <button onclick="sendChatMessage()" class="bg-[#2B2520] text-white p-2 rounded-xl"><i data-lucide="send" class="w-4 h-4"></i></button>
+            </div>
+        </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#FCFAF7]/90 backdrop-blur-md border-t border-[#EBE5DA] z-50 shadow-md">
+        <div class="max-w-md mx-auto flex justify-around items-center h-16">
+            <button onclick="switchTab('match')" id="nav-match" class="nav-item flex flex-col items-center justify-center flex-1 text-[#2B2520] font-medium scale-105">
+                <i data-lucide="palette" class="w-4 h-4 mb-0.5"></i><span class="text-[9px] tracking-widest">灵感工坊</span>
+            </button>
+            <button onclick="switchTab('community')" id="nav-community" class="nav-item flex flex-col items-center justify-center flex-1 text-[#9C8F80] hover:text-[#2B2520]">
+                <i data-lucide="layers" class="w-4 h-4 mb-0.5"></i><span class="text-[9px] tracking-widest">社区分享</span>
+            </button>
+            <button onclick="switchTab('destiny')" id="nav-destiny" class="nav-item flex flex-col items-center justify-center flex-1 text-[#9C8F80] hover:text-[#2B2520]">
+                <i data-lucide="sparkles" class="w-4 h-4 mb-0.5"></i><span class="text-[9px] tracking-widest">命理荐宝</span>
+            </button>
+            <button onclick="switchTab('assets')" id="nav-assets" class="nav-item flex flex-col items-center justify-center flex-1 text-[#9C8F80] hover:text-[#2B2520]">
+                <i data-lucide="gem" class="w-4 h-4 mb-0.5"></i><span class="text-[9px] tracking-widest">我的资产</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        lucide.createIcons();
+
+        // 完美对应用户上传图鉴里所有21种典型材质与天然瑕疵光学层
+        const crystals = [
+            { id: '1', name: '白水晶', color: '#F1F3F5', shadow: '#D0D5DD', texture: 'ice-crack', type: 'glass' },
+            { id: '2', name: '石榴石', color: '#5C0606', shadow: '#260101', texture: 'inner-cloud', type: 'deep' },
+            { id: '3', name: '茶晶', color: '#665343', shadow: '#362B21', texture: 'pure', type: 'glass' },
+            { id: '4', name: '红胶花', color: '#E06A55', shadow: '#8C2B1A', texture: 'flame-cloud', type: 'phantom' },
+            { id: '5', name: '月光石', color: '#D4E2EE', shadow: '#7A91A4', texture: 'blue-glow', type: 'opalescent' },
+            { id: '6', name: '金曜石', color: '#262422', shadow: '#0D0C0B', texture: 'gold-sheen', type: 'sheen' },
+            { id: '7', name: '超七水晶', color: '#864375', shadow: '#3B1533', texture: 'multi-rutilated', type: 'rutilated' },
+            { id: '8', name: '黑发晶', color: '#EAEAEA', shadow: '#9E9E9E', texture: 'black-hair', type: 'rutilated' },
+            { id: '9', name: '紫水晶', color: '#8C74D2', shadow: '#4D3B80', texture: 'crystal-v', type: 'glass' },
+            { id: '10', name: '黄水晶', color: '#FCD489', shadow: '#AA7420', texture: 'ice-crack', type: 'glass' },
+            { id: '11', name: '金发晶', color: '#FAF1D0', shadow: '#937F38', texture: 'gold-hair', type: 'rutilated' },
+            { id: '12', name: '绿幽灵', color: '#E8F5E9', shadow: '#3A5F35', texture: 'green-phantom', type: 'phantom' },
+            { id: '13', name: '葡萄石', color: '#C2E4B5', shadow: '#6F9960', texture: 'water-cloud', type: 'jade' },
+            { id: '14', name: '粉水晶', color: '#FFD3DC', shadow: '#C98F9B', texture: 'misty', type: 'glass' },
+            { id: '15', name: '草莓晶', color: '#E16B77', shadow: '#8E2833', texture: 'iron-spots', type: 'phantom' },
+            { id: '16', name: '红纹石', color: '#FF8A8A', shadow: '#C24646', texture: 'white-stripes', type: 'jade' },
+            { id: '17', name: '海蓝宝', color: '#A0D2EB', shadow: '#4B7B99', texture: 'ice-lines', type: 'glass' },
+            { id: '18', name: '摩根石', color: '#F7C3DC', shadow: '#B57C98', texture: 'pure', type: 'glass' },
+            { id: '19', name: '太阳石', color: '#F09B79', shadow: '#9B4E2E', texture: 'gold-sparks', type: 'sheen' },
+            { id: '20', name: '虎眼石', color: '#8A5825', shadow: '#3B2005', texture: 'tiger-eye', type: 'sheen' },
+            { id: '21', name: '海纹石', color: '#96E3E6', shadow: '#3E959E', texture: 'larimar-waves', type: 'jade' }
+        ];
+
+        let currentTab = 'match';
+        let currentGender = '乾造';
+        let isMuted = true;
+        let config = { wrist: 15, bead: 10, totalBeads: 0 };
+        let currentBeads = []; 
+        let mySavedAssets = []; 
+
+        window.onload = function() {
+            renderCrystalSelector();
+            calculateMaxBeads();
+            setupSliders();
+            renderCommunityGrid();
+            initCanvas();
+        };
+
+        function calculateMaxBeads() {
+            const wristMm = config.wrist * 10;
+            const innerRadius = wristMm / (2 * Math.PI); 
+            const centerToCenterRadius = innerRadius + (config.bead / 2);
+            config.totalBeads = Math.floor((2 * Math.PI * centerToCenterRadius) / (config.bead * 1.05));
+            if(currentBeads.length > config.totalBeads) currentBeads = currentBeads.slice(0, config.totalBeads);
+            updateUIStatus();
+            drawBeadPlate();
+        }
+
+        function updateUIStatus() {
+            document.getElementById('bead-count').innerText = `${currentBeads.length} / ${config.totalBeads}`;
+            const saveBtn = document.getElementById('btn-save-asset');
+            if(currentBeads.length >= config.totalBeads && config.totalBeads > 0) {
+                saveBtn.disabled = false;
+                saveBtn.innerText = "💾 保存此款式";
+                saveBtn.className = "mt-4 w-full bg-[#2B2520] text-white py-3 rounded-xl text-xs tracking-widest hover:bg-[#1C1815] transition-all cursor-pointer shadow-sm";
+                document.getElementById('match-status').innerText = "已完美";
+                document.getElementById('match-status').className = "text-[10px] font-bold tracking-widest text-emerald-800";
+            } else {
+                saveBtn.disabled = true;
+                saveBtn.innerText = `还差 ${config.totalBeads - currentBeads.length} 颗填满`;
+                saveBtn.className = "mt-4 w-full bg-[#C2BBB0] text-[#FCFAF7] py-3 rounded-xl text-xs tracking-widest cursor-not-allowed";
+                document.getElementById('match-status').innerText = "正在设计";
+                document.getElementById('match-status').className = "text-[10px] font-medium tracking-widest text-[#736453]";
+            }
+        }
+
+        function addBeadToPlate(id) {
+            if(currentBeads.length >= config.totalBeads) return;
+            const cry = crystals.find(c => c.id === id);
+            currentBeads.push(cry);
+            updateUIStatus();
+            drawBeadPlate();
+        }
+
+        function clearCurrentBeads() { currentBeads = []; updateUIStatus(); drawBeadPlate(); }
+
+        function setupSliders() {
+            document.getElementById('slider-wrist').oninput = function() {
+                config.wrist = parseFloat(this.value);
+                document.getElementById('val-wrist').innerText = `${config.wrist} cm`;
+                calculateMaxBeads();
+            };
+            document.getElementById('slider-bead').oninput = function() {
+                config.bead = parseInt(this.value);
+                document.getElementById('val-bead').innerText = `${config.bead} mm`;
+                calculateMaxBeads();
+            };
+        }
+
+        function initCanvas() {
+            const canvas = document.getElementById('beadCanvas');
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.clientWidth * dpr;
+            canvas.height = canvas.clientHeight * dpr;
+            canvas.getContext('2d').scale(dpr, dpr);
+            drawBeadPlate();
+        }
+
+        // ========================================================
+        // 全新超仿真几何矿物微瑕视觉核心绘制层
+        // ========================================================
+        function drawBeadPlate() {
+            const canvas = document.getElementById('beadCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+            const centerX = width / 2;
+            const centerY = height / 2;
+            ctx.clearRect(0, 0, width, height);
+
+            const baseRadius = Math.min(centerX, centerY) * 0.68;
+            
+            for (let i = 0; i < config.totalBeads; i++) {
+                const angle = (i * 2 * Math.PI) / config.totalBeads - Math.PI / 2;
+                const beadX = centerX + baseRadius * Math.cos(angle);
+                const beadY = centerY + baseRadius * Math.sin(angle);
+                const r = Math.max(7, config.bead * 1.35);
+
+                if (i >= currentBeads.length) {
+                    // 图1中的空轨道雕刻木槽弧形虚影
+                    ctx.beginPath();
+                    ctx.arc(beadX, beadY, r * 0.85, 0, 2 * Math.PI);
+                    ctx.fillStyle = 'rgba(176, 161, 127, 0.22)';
+                    ctx.fill();
+                    continue;
+                }
+
+                const cry = currentBeads[i];
+
+                // 1. 天然坠落投影层 (增强空间悬浮感)
+                ctx.save();
+                ctx.shadowColor = 'rgba(28, 22, 16, 0.16)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 5;
+                ctx.beginPath();
+                ctx.arc(beadX, beadY, r, 0, 2 * Math.PI);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                ctx.restore();
+
+                // 2. 矿石大底色底色晕染层
+                ctx.beginPath();
+                ctx.arc(beadX, beadY, r, 0, 2 * Math.PI);
+                let baseGrad = ctx.createRadialGradient(beadX - r*0.2, beadY - r*0.2, r*0.1, beadX, beadY, r);
+                baseGrad.addColorStop(0, '#FFFFFF');
+                baseGrad.addColorStop(0.2, cry.color);
+                baseGrad.addColorStop(0.8, cry.shadow);
+                baseGrad.addColorStop(1, '#1A1108');
+                ctx.fillStyle = baseGrad;
+                ctx.fill();
+
+                // 3. 核心：根据不同材质种类，定制其内部包体与特殊反射光芒
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(beadX, beadY, r, 0, 2 * Math.PI);
+                ctx.clip(); 
+
+                // A. 超七 / 金发晶 / 黑发晶 (发丝、针状包裹体拉丝)
+                if (cry.type === 'rutilated') {
+                    ctx.lineWidth = 0.8;
+                    let hairCount = cry.texture === 'multi-rutilated' ? 14 : 9;
+                    ctx.strokeStyle = cry.texture === 'black-hair' ? 'rgba(0,0,0,0.7)' : 'rgba(212,175,55,0.75)';
+                    if(cry.texture === 'multi-rutilated') ctx.strokeStyle = 'rgba(120,40,90,0.6)';
+                    for(let h=0; h<hairCount; h++) {
+                        ctx.beginPath();
+                        let startX = beadX + (Math.sin(h)*r);
+                        let startY = beadY + (Math.cos(h)*r);
+                        ctx.moveTo(startX, startY);
+                        ctx.lineTo(startX - (Math.cos(h)*r*2), startY - (Math.sin(h)*r*1.8));
+                        ctx.stroke();
+                    }
+                }
+                // B. 胶花 / 绿幽灵 / 草莓晶 (千层云雾、火山火山泥聚宝盆矿缺)
+                else if (cry.type === 'phantom') {
+                    ctx.fillStyle = cry.texture === 'green-phantom' ? 'rgba(34,76,30,0.7)' : (cry.texture === 'iron-spots' ? 'rgba(130,20,30,0.6)' : 'rgba(194,77,54,0.75)');
+                    for(let p=0; p<8; p++) {
+                        ctx.beginPath();
+                        ctx.arc(beadX + (Math.sin(p)*r*0.4), beadY + (Math.cos(p)*r*0.4), r * (0.15 + Math.random()*0.15), 0, 2*Math.PI);
+                        ctx.fill();
+                    }
+                }
+                // C. 月光石 / 太阳石 / 金曜石 (特殊猫眼效应与浮光漂移)
+                else if (cry.type === 'sheen' || cry.type === 'opalescent') {
+                    let sheenGrad = ctx.createLinearGradient(beadX - r, beadY - r, beadX + r, beadY + r);
+                    if(cry.texture === 'blue-glow') { // 月光石经典的幽蓝晕彩
+                        sheenGrad.addColorStop(0, 'rgba(255,255,255,0)');
+                        sheenGrad.addColorStop(0.5, 'rgba(84,166,255,0.55)');
+                        sheenGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                    } else if(cry.texture === 'tiger-eye' || cry.texture === 'gold-sheen') { // 虎眼石/金曜石垂直反光带
+                        sheenGrad.addColorStop(0, 'rgba(0,0,0,0)');
+                        sheenGrad.addColorStop(0.45, 'rgba(232,180,68,0.65)');
+                        sheenGrad.addColorStop(0.55, 'rgba(232,180,68,0.65)');
+                        sheenGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                    }
+                    ctx.fillStyle = sheenGrad;
+                    ctx.fillRect(beadX-r, beadY-r, r*2, r*2);
+                }
+                // D. 海纹石 / 红纹石 / 葡萄石 (波纹特征及天然玉化网格)
+                else if (cry.texture === 'larimar-waves' || cry.texture === 'white-stripes') {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                    ctx.lineWidth = 1.2;
+                    for(let w=0; w<4; w++) {
+                        ctx.beginPath();
+                        ctx.arc(beadX - r*0.3, beadY - r*0.3, r*(0.4 + w*0.3), 0, Math.PI*2);
+                        ctx.stroke();
+                    }
+                }
+
+                // E. 天然冰裂纹与气液包裹体 (白水晶、黄水晶、紫水晶共有特征)
+                if (cry.texture === 'ice-crack' || cry.texture === 'ice-lines') {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(beadX - r, beadY + r*0.2);
+                    ctx.lineTo(beadX + r*0.3, beadY - r*0.4);
+                    ctx.moveTo(beadX - r*0.2, beadY + r*0.5);
+                    ctx.lineTo(beadX + r*0.8, beadY + r*0.1);
+                    ctx.stroke();
+                }
+                ctx.restore();
+
+                // 4. 超硬核全反光层（还原你图中那种镜面玻璃体透亮质感）
+                ctx.beginPath();
+                ctx.arc(beadX, beadY, r, 0, 2 * Math.PI);
+                let glassGrad = ctx.createRadialGradient(beadX - r*0.35, beadY - r*0.35, 1, beadX - r*0.35, beadY - r*0.35, r*0.75);
+                glassGrad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+                glassGrad.addColorStop(0.15, 'rgba(255, 255, 255, 0.35)');
+                glassGrad.addColorStop(0.4, 'rgba(255, 255, 255, 0.05)');
+                glassGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = glassGrad;
+                ctx.fill();
+            }
+        }
+
+        // 渲染21种极其惊艳的水晶选择控件
+        function renderCrystalSelector() {
+            const container = document.getElementById('crystal-selector');
+            container.innerHTML = crystals.map(c => `
+                <button onclick="addBeadToPlate('${c.id}')" class="p-2 bg-white border border-[#EBE5DA] rounded-xl flex flex-col items-center justify-center hover:border-[#2B2520] transition-all group">
+                    <div class="w-10 h-10 rounded-full shadow-inner flex-shrink-0 relative overflow-hidden" style="background: radial-gradient(circle at 30% 30%, #fff, ${c.color} 45%, ${c.shadow})">
+                        <div class="absolute inset-0" style="background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 60%)"></div>
+                    </div>
+                    <span class="text-[10px] text-[#2B2520] font-medium mt-1.5">${c.name}</span>
+                </button>
+            `).join('');
+        }
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.nav-item').forEach(el => el.className = 'nav-item flex flex-col items-center justify-center flex-1 text-[#9C8F80] hover:text-[#2B2520]');
+            document.getElementById(`nav-${tabId}`).className = 'nav-item flex flex-col items-center justify-center flex-1 text-[#2B2520] font-medium scale-105';
+            
+            document.querySelectorAll('.page-view').forEach(el => el.classList.add('hidden'));
+            
+            const titles = {
+                'match': {t:'靈感工坊', d:'极简北欧风 · 还原天然晶石真实流光'},
+                'community': {t:'同频美学分享圈', d:'汇聚质感穿搭博主的原生手串真实搭配图'},
+                'destiny': {t:'生辰八字本命晶石测算', d:'天星引航，依生辰推衍喜用神能量互补阵法'},
+                'assets': {t:'数字资产文玩阁', d:'珍藏与溯源您独立调配的款式资产'}
+            };
+            
+            document.getElementById(`page-title`).innerText = titles[tabId].t;
+            document.getElementById(`page-desc`).innerText = titles[tabId].d;
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            
+            if(tabId === 'match') { setTimeout(initCanvas, 40); }
+            if (tabId === 'assets') renderAssets();
+        }
+
+        function toggleBGM() {
+            const bgm = document.getElementById('bgm');
+            const btn = document.getElementById('bgm-btn');
+            if (isMuted) {
+                bgm.play().catch(()=>{});
+                btn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4"></i>`;
+                btn.classList.add('bg-[#E8E2D5]');
+            } else {
+                bgm.pause();
+                btn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4"></i>`;
+                btn.classList.remove('bg-[#E8E2D5]');
+            }
+            isMuted = !isMuted;
+            lucide.createIcons();
+        }
+
+        // 引入高清真实质感晶石图充实社区
+        function renderCommunityGrid() {
+            const posts = [
+                { title: '极光超七混搭黑发晶！清冷感北欧风高定天花板...', user: 'Amber半夏', likes: '1.2w', img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=300&q=80' },
+                { title: '海纹石和冰种海蓝宝！夏天一定要拥有一条蔚蓝海洋之弦', user: '白日追光者', likes: '8401', img: 'https://images.unsplash.com/photo-1615484477778-ca3b77940c25?auto=format&fit=crop&w=300&q=80' },
+                { title: '实测！乌拉圭深紫晶和黄水晶多宝，事业贵人缘真的有变好', user: '念安', likes: '4203', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=300&q=80' },
+                { title: '复古感拉满的虎眼石配金曜石！送男朋友他完全爱不释手', user: '山茶博主', likes: '2931', img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=300&q=80' }
+            ];
+            document.getElementById('community-grid').innerHTML = posts.map(p => `
+                <div class="bg-white border border-[#EBE5DA] rounded-2xl overflow-hidden shadow-xs group">
+                    <div class="h-44 bg-[#F2ECE0] overflow-hidden">
+                        <img src="${p.img}" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-700 opacity-95">
+                    </div>
+                    <div class="p-3 space-y-2">
+                        <h4 class="text-xs font-medium text-[#2B2520] line-clamp-2 leading-relaxed">${p.title}</h4>
+                        <div class="flex justify-between items-center text-[10px] text-[#9C8F80]">
+                            <span>@ ${p.user}</span>
+                            <span class="flex items-center gap-0.5"><i data-lucide="heart" class="w-3 h-3 text-rose-400"></i> ${p.likes}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function setGender(g) {
+            currentGender = g;
+            document.getElementById('gender-m').className = g==='乾造' ? 'flex-1 py-2 text-center text-xs rounded-xl bg-[#2B2520] text-white transition-all' : 'flex-1 py-2 text-center text-xs rounded-xl bg-white text-[#6E6152] border border-[#EBE5DA] transition-all';
+            document.getElementById('gender-f').className = g==='坤造' ? 'flex-1 py-2 text-center text-xs rounded-xl bg-[#2B2520] text-white transition-all' : 'flex-1 py-2 text-center text-xs rounded-xl bg-white text-[#6E6152] border border-[#EBE5DA] transition-all';
+        }
+
+        function calculateDestiny() {
+            const date = document.getElementById('destiny-date').value;
+            if(!date) return;
+            const resBox = document.getElementById('destiny-result');
+            resBox.classList.remove('hidden');
+            resBox.innerHTML = `
+                <div class="text-xs space-y-2 text-[#6E6152] leading-relaxed">
+                    <div><span class="font-bold text-[#2B2520]">四柱乾坤：</span>${currentGender}，诞生于公历 ${date}</div>
+                    <div><span class="font-bold text-[#2B2520]">五行格局：</span>您命理喜【<span class="text-sky-800 font-bold">水</span>】，推荐配戴带有特殊晶体律动的水系核心。</div>
+                    <div class="p-3 bg-[#F2ECE0] border border-[#E5DCBE] rounded-xl flex items-center justify-between mt-2">
+                        <div>
+                            <p class="font-bold text-[#2B2520]">推荐搭配：冰纹海蓝宝 + 海纹石</p>
+                            <p class="text-[9px] text-[#9C8F80]">${crystals[16].name}与${crystals[20].name}交替调和</p>
+                        </div>
+                        <button onclick="applyDestinyCrystal('17')" class="bg-[#2B2520] text-white px-3 py-1.5 rounded-lg text-[10px]">一键注入</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function applyDestinyCrystal(id) { switchTab('match'); addBeadToPlate(id); }
+
+        function saveToAssets() {
+            if(currentBeads.length < config.totalBeads) return;
+            const newAsset = {
+                id: Date.now(),
+                name: `数字灵感手串集 · No.${mySavedAssets.length + 1}`,
+                wrist: config.wrist,
+                bead: config.bead,
+                beadsData: [...currentBeads]
+            };
+            mySavedAssets.push(newAsset);
+            alert('🌟 该款式已为您成功存入“我的资产”阁楼！');
+            clearCurrentBeads();
+        }
+
+        function renderAssets() {
+            const grid = document.getElementById('assets-grid');
+            const empty = document.getElementById('assets-empty');
+            if(mySavedAssets.length === 0) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+            grid.innerHTML = mySavedAssets.map(a => `
+                <div class="bg-white border border-[#EBE5DA] p-4 rounded-2xl flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full flex-shrink-0 bg-[#F2ECE0] flex items-center justify-center">
+                        <div class="w-6 h-6 rounded-full" style="background: radial-gradient(circle at 30% 30%, #fff, ${a.beadsData[0]?.color || '#2B2520'})"></div>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <h4 class="text-xs font-bold text-[#2B2520] truncate">${a.name}</h4>
+                        <p class="text-[9px] text-[#9C8F80] mt-0.5">${a.bead}mm · ${a.wrist}cm · 共${a.beadsData.length}颗</p>
+                        <button onclick="loadAssetToCanvas(${a.id})" class="text-[9px] text-[#2B2520] underline mt-1 block font-medium">重现至木盘</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadAssetToCanvas(id) {
+            const asset = mySavedAssets.find(a => a.id === id);
+            if (!asset) return;
+            config.wrist = asset.wrist;
+            config.bead = asset.bead;
+            currentBeads = [...asset.beadsData];
+            document.getElementById('slider-wrist').value = asset.wrist;
+            document.getElementById('val-wrist').innerText = `${asset.wrist} cm`;
+            document.getElementById('slider-bead').value = asset.bead;
+            document.getElementById('val-bead').innerText = `${asset.bead} mm`;
+            switchTab('match');
+        }
+
+        function toggleAI() { document.getElementById('ai-panel').classList.toggle('hidden'); }
+
+        function sendChatMessage() {
+            const input = document.getElementById('ai-input');
+            const chat = document.getElementById('ai-chat');
+            const text = input.value.trim();
+            if(!text) return;
+            chat.innerHTML += `<div class="bg-[#2B2520] text-white p-2.5 rounded-xl text-right self-end max-w-[85%] ml-auto">${text}</div>`;
+            input.value = '';
+            setTimeout(() => {
+                let reply = "多宝串讲究色彩与能量的平衡，您可以尝试在一颗【金发晶】后排入一颗【黑发晶】，构成阴阳调和。";
+                if(text.includes('社区')) { reply = "已帮您翻转至【社区分享】页面。"; switchTab('community'); }
+                chat.innerHTML += `<div class="bg-[#F2ECE0] border border-[#E5DCBE] p-2.5 rounded-xl max-w-[90%]">🤖 ${reply}</div>`;
+                chat.scrollTop = chat.scrollHeight;
+            }, 400);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SutraGlow - 真实水晶北欧风工坊</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght=300;500;700&display=swap');
+        body { font-family: 'Noto Serif SC', serif; background-color: #F7F5F0; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* ==================== 雪碧图放大裁剪 ==================== */
+        .crystal-sprite {
+            background-image: url('crystals.jpg'); 
+            background-size: 565% 585%; 
+            background-repeat: no-repeat;
+            border-radius: 50%;
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            height: 100%;
+            transform: scale(1.55); 
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.3), 0 4px 10px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease;
+        }
+
+        .bead-mask-wrap {
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border: 1px solid rgba(43, 37, 32, 0.1);
+        }
+
+        #crystal-selector button:hover .crystal-sprite {
+            transform: scale(1.7);
+        }
+    </style>
+</head>
+<body class="text-[#3A332C] min-h-screen flex flex-col justify-between antialiased pb-16">
+
+    <audio id="bgm" loop src="https://assets.mixkit.co/active_storage/sfx/2448/2448-200.wav" preload="auto"></audio>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col lg:flex-row gap-6 h-[calc(100vh-4rem)] overflow-hidden">
+        
+        <div class="flex-1 bg-[#FCFAF7] rounded-[32px] border border-[#EBE5DA] p-6 flex flex-col overflow-hidden relative shadow-xs">
+            
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <div>
+                    <h1 class="text-xl font-medium tracking-widest text-[#2B2520]">灵感工坊</h1>
+                    <p class="text-[10px] text-[#9C8F80] tracking-wider mt-0.5">几何向心重构 · 确保绝对规则圆环与巨型璀璨切片</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleBGM()" id="bgm-btn" class="p-2.5 bg-[#F2EDE2] hover:bg-[#E8E1D2] rounded-full text-[#54493F] transition-all cursor-pointer" title="控制轻音乐">
+                        <i data-lucide="volume-x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-match" class="page-view flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
+                
+                <div class="flex-1 flex flex-col items-center justify-center bg-[#F2ECE0] rounded-2xl p-4 border border-[#E5DCBE] relative">
+                    <div id="wood-plate" class="relative w-80 h-80 md:w-[410px] md:h-[410px] rounded-full bg-[#E5DCBE] shadow-[inset_0_4px_12px_rgba(0,0,0,0.06),0_12px_36px_rgba(40,30,20,0.12)] flex items-center justify-center border-4 border-[#DCD1B1]">
+                        <div class="absolute w-[88%] h-[88%] rounded-full bg-[#E8E0C4] shadow-inner"></div>
+                        <div class="absolute w-[76%] h-[76%] rounded-full border-[22px] border-[#DECFA4] opacity-40 shadow-[inset_0_3px_10px_rgba(0,0,0,0.08)]"></div>
+                        
+                        <div class="absolute w-28 h-28 bg-[#DECFA4] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,0.1)] z-0 flex flex-col items-center justify-center border border-[#CEBF93]">
+                            <span id="match-status" class="text-[10px] font-medium tracking-widest text-[#736453]">正在设计</span>
+                            <span id="bead-count" class="text-xs font-bold text-[#2B2520] mt-0.5">0 / 15</span>
+                        </div>
+
+                        <div id="bead-plate-container" class="absolute inset-0 z-10 pointer-events-none"></div>
+                    </div>
+                    
+                    <div class="w-full max-w-sm mt-5 space-y-3 bg-[#FCFAF7]/90 backdrop-blur-md p-3.5 rounded-xl border border-[#EBE5DA]">
+                        <div>
+                            <div class="flex justify-between text-[11px] text-[#6E6152] mb-1">
+                                <span>选择净手围 (Wrist Size)</span>
+                                <span class="font-bold" id="val-wrist">15 cm</span>
+                            </div>
+                            <input type="range" id="slider-wrist" min="13" max="19" step="0.5" value="15" class="w-full accent-[#2B2520] h-[2px] bg-[#E3D9C8] cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[11px] text-[#6E6152] mb-1">
+                                <span>选择珠子直径 (Bead Size)</span>
+                                <span class="font-bold" id="val-bead">10 mm</span>
+                            </div>
+                            <input type="range" id="slider-bead" min="8" max="14" step="2" value="10" class="w-full accent-[#2B2520] h-[2px] bg-[#E3D9C8] cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-80 flex flex-col bg-[#FCFAF7] border border-[#EBE5DA] rounded-2xl p-4 overflow-hidden gap-3">
+                    <div class="flex justify-between items-center flex-shrink-0">
+                        <h3 class="text-xs font-bold text-[#6E6152] tracking-widest">原图晶石图鉴 (点击入盘)</h3>
+                        <button onclick="clearCurrentBeads()" class="text-[10px] text-[#9C8F80] hover:text-red-500 underline tracking-wider cursor-pointer">清空</button>
+                    </div>
+                    
+                    <div class="flex-1 grid grid-cols-3 gap-2 overflow-y-auto no-scrollbar pr-1" id="crystal-selector"></div>
+                    
+                    <div class="bg-[#F2EDE2]/60 border border-[#E3D9C8] rounded-xl p-3 space-y-2">
+                        <div class="flex items-center gap-1.5 text-xs font-bold text-[#54493F]">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-600 animate-pulse"></i>
+                            <span>AI 智能工坊助手</span>
+                        </div>
+                        <p class="text-[10px] text-[#8C7E6E] leading-relaxed">提供更多自动检索校准推荐色系配置：</p>
+                        <div class="grid grid-cols-1 gap-1.5 pt-0.5 max-h-36 overflow-y-auto no-scrollbar">
+                            <button onclick="aiRecommendColor('aurora')" class="text-[10px] bg-white border border-[#E3D9C8] py-1 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                                <span>✨ 空灵极光系 (海蓝/白水/紫晶)</span>
+                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </button>
+                            <button onclick="aiRecommendColor('earth')" class="text-[10px] bg-white border border-[#E3D9C8] py-1 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                                <span>🌾 大地丰收系 (黄晶/金发/虎睛)</span>
+                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </button>
+                            <button onclick="aiRecommendColor('forest')" class="text-[10px] bg-white border border-[#E3D9C8] py-1 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                                <span>🌿 幽谷流萤系 (绿幽灵/葡萄石/茶晶)</span>
+                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </button>
+                            <button onclick="aiRecommendColor('sun')" class="text-[10px] bg-white border border-[#E3D9C8] py-1 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                                <span>☀️ 炽热骄阳系 (太阳石/红纹/石榴)</span>
+                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </button>
+                            <button onclick="aiRecommendColor('ocean')" class="text-[10px] bg-white border border-[#E3D9C8] py-1 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                                <span>🌊 深海静谧系 (海纹石/金曜/黑发)</span>
+                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button id="btn-save-asset" onclick="saveToAssets()" disabled class="w-full bg-[#C2BBB0] text-[#FCFAF7] py-3 rounded-xl text-xs tracking-widest cursor-not-allowed transition-all">
+                        <i data-lucide="lock" class="w-3.5 h-3.5 inline mr-1"></i>填满方可保存款式
+                    </button>
+                </div>
+            </div>
+
+            <div id="view-community" class="page-view flex-1 hidden overflow-y-auto no-scrollbar bg-[#FCFAF7] p-2">
+                <div class="max-w-xl mx-auto space-y-6 py-4">
+                    <div class="text-center space-y-1">
+                        <div class="inline-flex p-3 bg-[#F2ECE0] rounded-full text-[#54493F] mb-1">
+                            <i data-lucide="compass" class="w-6 h-6 animate-spin-slow"></i>
+                        </div>
+                        <h2 class="text-base font-bold text-[#2B2520] tracking-widest">五行本命原石测算</h2>
+                        <p class="text-xs text-[#9C8F80]">基于古法星学与时空能量，推算您专属的互补矿石</p>
+                    </div>
+
+                    <div class="bg-white border border-[#EBE5DA] rounded-2xl p-5 shadow-xs space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-[11px] text-[#6E6152] font-medium block">出生日期 (公历)</label>
+                                <input type="date" id="astro-date" class="w-full bg-[#FCFAF7] border border-[#EBE5DA] rounded-xl px-3 py-2 text-xs text-[#3A332C] focus:outline-none focus:border-[#2B2520]">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[11px] text-[#6E6152] font-medium block">出生时辰</label>
+                                <select id="astro-time" class="w-full bg-[#FCFAF7] border border-[#EBE5DA] rounded-xl px-3 py-2 text-xs text-[#3A332C] focus:outline-none focus:border-[#2B2520]">
+                                    <option value="0">子时 (23:00-01:00)</option>
+                                    <option value="2">丑时 (01:00-03:00)</option>
+                                    <option value="4">寅时 (03:00-05:00)</option>
+                                    <option value="6">卯时 (05:00-07:00)</option>
+                                    <option value="8">辰时 (07:00-09:00)</option>
+                                    <option value="10" selected>巳时 (09:00-11:00)</option>
+                                    <option value="12">午时 (11:00-13:00)</option>
+                                    <option value="14">未时 (13:00-15:00)</option>
+                                    <option value="16">申时 (15:00-17:00)</option>
+                                    <option value="18">酉时 (17:00-19:00)</option>
+                                    <option value="20">戌时 (19:00-21:00)</option>
+                                    <option value="22">亥时 (21:00-23:00)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onclick="calculateFiveElements()" class="w-full bg-[#2B2520] hover:bg-[#1C1815] text-white py-3 rounded-xl text-xs font-medium tracking-widest transition-all cursor-pointer shadow-sm">
+                            🎯 开启本命星盘解析
+                        </button>
+                    </div>
+
+                    <div id="astro-result" class="hidden bg-white border border-[#EBE5DA] rounded-2xl p-5 space-y-4 transition-all">
+                        <div class="flex items-center justify-between border-b border-[#F2EDE2] pb-3">
+                            <div>
+                                <span class="text-[10px] text-[#9C8F80] block tracking-wider">本命所属格局</span>
+                                <span class="text-sm font-bold text-[#2B2520]" id="res-grid-name">乾坤清气格</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-[#9C8F80] block tracking-wider">核心能量倾向</span>
+                                <span class="text-xs font-bold text-amber-800" id="res-element-need">喜水 · 补木</span>
+                            </div>
+                        </div>
+                        <div class="text-xs text-[#54493F] leading-relaxed" id="res-description">
+                            经过推算，您的生辰格局呈现能量均衡态，近期身心磁场适宜清润通透之原石。
+                        </div>
+                        <div class="p-3 bg-[#F2ECE0] rounded-xl space-y-2">
+                            <span class="text-[10px] font-bold text-[#6E6152] tracking-wider block">🔮 专属御守水晶推荐：</span>
+                            <div class="flex items-center gap-3">
+                                <div class="bead-mask-wrap w-12 h-12 bg-white flex-shrink-0" id="res-crystal-avatar"></div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-[#2B2520]" id="res-crystal-name">海蓝宝</h4>
+                                    <p class="text-[10px] text-[#9C8F80] mt-0.5" id="res-crystal-effect">帮助舒缓情绪，强化灵性表达与核心气场</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-assets" class="page-view flex-1 hidden flex-col items-center justify-center overflow-hidden">
+                <div id="assets-empty" class="text-center py-12 text-xs text-gray-400">暂无手作资产，请先在工坊中保存设计。</div>
+                
+                <div id="assets-display-wrapper" class="hidden w-full flex-1 flex flex-col items-center justify-center gap-4">
+                    <div id="assets-carousel" class="w-full flex items-center justify-center gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory px-4">
+                        </div>
+                    
+                    <div class="flex items-center gap-6 bg-white border border-[#EBE5DA] px-4 py-2 rounded-full shadow-xs">
+                        <button onclick="moveAssetCarousel(-1)" class="p-1 text-[#6E6152] hover:text-[#2B2520] cursor-pointer"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                        <span id="asset-carousel-indicator" class="text-xs font-bold tracking-widest text-[#2B2520]">0 / 0</span>
+                        <button onclick="moveAssetCarousel(1)" class="p-1 text-[#6E6152] hover:text-[#2B2520] cursor-pointer"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#FCFAF7]/90 backdrop-blur-md border-t border-[#EBE5DA] z-50 shadow-xs">
+        <div class="max-w-md mx-auto flex justify-around items-center h-16">
+            <button onclick="switchTab('match')" id="nav-match" class="nav-item flex flex-col items-center justify-center flex-1 text-[#2B2520] font-medium scale-105 cursor-pointer"><i data-lucide="palette" class="w-4 h-4 mb-0.5"></i><span class="text-[9px] tracking-widest">灵感工坊</span></button>
+            <button onclick="switchTab('community')" id="nav-community" class="nav-item flex flex-col items-center justify-center flex-1 text-[#9C8F80] hover:text-[#2B2520] cursor-pointer"><i data-lucide="compass" class="w-4 h-4 mb-0.5"></i><span class="text-[9px] tracking-widest">本命测算</span></button>
+            <button onclick="switchTab('assets')" id="nav-assets" class="nav-item flex flex-col items-center justify-center flex-1 text-[#9C8F80] hover:text-[#2B2520] cursor-pointer"><i data-lucide="gem" class="w-4 h-4 mb-0.5"></i><span class="text-[9px] tracking-widest">我的资产</span></button>
+        </div>
+    </nav>
+
+    <script>
+        lucide.createIcons();
+
+        // 核心原石数据
+        const crystals = [
+            { id: '1', name: '白水晶', posX: -0.8, posY: -0.5, meta: '纯净之石 · 放大全局气场' },
+            { id: '2', name: '石榴石', posX: 24.3, posY: -0.5, meta: '红润之石 · 滋养元气与气血' },
+            { id: '3', name: '茶晶', posX: 49.7, posY: -0.5, meta: '沉稳之石 · 过滤负面频率' },
+            { id: '4', name: '红胶花', posX: 73.3, posY: -0.5, meta: '鸿运之石 · 汇聚吉祥运势' },
+            { id: '6', name: '金曜石', posX: -0.8, posY: 24.7, meta: '辟邪之石 · 闪耀辉煌财运' },
+            { id: '7', name: '超七水晶', posX: 24.3, posY: 24.7, meta: '全能之石 · 调和复合能量场' },
+            { id: '8', name: '黑发晶', posX: 49.7, posY: 23.7, meta: '领袖之石 · 突破事业重围' },
+            { id: '9', name: '紫水晶', posX: 73.3, posY: 24.7, meta: '智慧之石 · 启发直觉与灵感' },
+            { id: '10', name: '黄水晶', posX: 95.8, posY: 24.7, meta: '财富之石 · 主商机与偏财运' },
+            { id: '11', name: '深紫晶', posX: -0.8, posY: 49.8, meta: '冥想之石 · 深度安神与开智' },
+            { id: '13', name: '金发晶', posX: 49.7, posY: 49.8, meta: '正财之石 · 汇聚丰盛资产' },
+            { id: '14', name: '绿幽灵', posX: 70, posY: 49.3, meta: '事业之石 · 助益职场运势与转机' }, 
+            { id: '15', name: '葡萄石', posX: 94.8, posY: 48.8, meta: '希望之石 · 引导解毒与新生' },
+            { id: '16', name: '粉水晶', posX: -0.8, posY: 73.9, meta: '人缘之石 · 舒缓并带来美好姻缘' },
+            { id: '17', name: '草莓晶', posX: 23.3, posY: 73.9, meta: '桃花之石 · 增强独特个人魅力' },
+            { id: '18', name: '红纹石', posX: 48.7, posY: 73.9, meta: '爱神之石 · 疗愈心灵深处创伤' },
+            { id: '19', name: '海蓝宝', posX: 72.7, posY: 74.4, meta: '勇气之石 · 强化沟通与自我表达' }, 
+            { id: '21', name: '太阳石', posX: -0.8, posY: 97.4, meta: '炽热之石 · 注入暖阳般自信光芒' },
+            { id: '22', name: '虎睛石', posX: 24.3, posY: 97.4, meta: '决断之石 · 驱散优柔寡断与恐惧' },
+            { id: '24', name: '黑曜石', posX: 70.7, posY: 99.0, meta: '守护之石 · 强力吸纳负能量' }, 
+            { id: '25', name: '海纹石', posX: 95.8, posY: 97.4, meta: '海洋之石 · 带来平静与自由心境' }
+        ];
+
+        let config = { wrist: 15, bead: 10, totalBeads: 0 };
+        let currentBeads = []; 
+        let mySavedAssets = [];
+        let currentAssetIndex = 0;
+        let isMuted = true;
+
+        window.onload = function() {
+            renderCrystalSelector();
+            calculateMaxBeads();
+            
+            document.getElementById('slider-wrist').oninput = function() {
+                config.wrist = parseFloat(this.value);
+                document.getElementById('val-wrist').innerText = `${config.wrist} cm`;
+                calculateMaxBeads();
+            };
+            document.getElementById('slider-bead').oninput = function() {
+                config.bead = parseInt(this.value);
+                document.getElementById('val-bead').innerText = `${config.bead} mm`;
+                calculateMaxBeads();
+            };
+            window.onresize = function() { 
+                renderBeadsOnPlate(); 
+                if(document.getElementById('view-assets').classList.contains('hidden') === false) {
+                    renderAssets();
+                }
+            };
+        };
+
+        function calculateMaxBeads() {
+            const wristMm = config.wrist * 10;
+            const innerRadius = wristMm / (2 * Math.PI); 
+            const centerToCenterRadius = innerRadius + (config.bead / 2);
+            config.totalBeads = Math.floor((2 * Math.PI * centerToCenterRadius) / (config.bead * 1.05));
+            
+            if(currentBeads.length > config.totalBeads) {
+                currentBeads = currentBeads.slice(0, config.totalBeads);
+            }
+            updateUIStatus();
+            renderBeadsOnPlate();
+        }
+
+        function updateUIStatus() {
+            document.getElementById('bead-count').innerText = `${currentBeads.length} / ${config.totalBeads}`;
+            const saveBtn = document.getElementById('btn-save-asset');
+            if(currentBeads.length >= config.totalBeads && config.totalBeads > 0) {
+                saveBtn.disabled = false;
+                saveBtn.innerText = "💾 保存此款式";
+                saveBtn.className = "w-full bg-[#2B2520] text-white py-3 rounded-xl text-xs tracking-widest hover:bg-[#1C1815] transition-all cursor-pointer shadow-md";
+                document.getElementById('match-status').innerText = "已填满";
+                document.getElementById('match-status').className = "text-[10px] font-bold tracking-widest text-green-700";
+            } else {
+                saveBtn.disabled = true;
+                saveBtn.innerText = `还差 ${config.totalBeads - currentBeads.length} 颗填满`;
+                saveBtn.className = "w-full bg-[#C2BBB0] text-[#FCFAF7] py-3 rounded-xl text-xs tracking-widest cursor-not-allowed";
+                document.getElementById('match-status').innerText = "正在设计";
+                document.getElementById('match-status').className = "text-[10px] font-medium tracking-widest text-[#736453]";
+            }
+        }
+
+        function addBeadToPlate(id) {
+            if(currentBeads.length >= config.totalBeads) return;
+            const target = crystals.find(c => c.id === id);
+            currentBeads.push(target);
+            updateUIStatus();
+            renderBeadsOnPlate();
+        }
+
+        function clearCurrentBeads() {
+            currentBeads = [];
+            updateUIStatus();
+            renderBeadsOnPlate();
+        }
+
+        function renderBeadsOnPlate() {
+            const container = document.getElementById('bead-plate-container');
+            const woodPlate = document.getElementById('wood-plate');
+            if (!container || !woodPlate) return;
+
+            container.innerHTML = '';
+            const plateWidth = woodPlate.offsetWidth;
+            const centerX = plateWidth / 2;
+            const centerY = plateWidth / 2;
+            const baseRadius = plateWidth * 0.34; 
+            const displaySize = Math.max(32, config.bead * 3.6); 
+
+            for (let i = 0; i < config.totalBeads; i++) {
+                const angle = (i * 2 * Math.PI) / config.totalBeads - Math.PI / 2;
+                const x = centerX + baseRadius * Math.cos(angle);
+                const y = centerY + baseRadius * Math.sin(angle);
+
+                const wrapEl = document.createElement('div');
+                wrapEl.style.position = 'absolute';
+                wrapEl.style.width = `${displaySize}px`;
+                wrapEl.style.height = `${displaySize}px`;
+                wrapEl.style.left = `${x}px`;
+                wrapEl.style.top = `${y}px`;
+                wrapEl.style.transform = 'translate(-50%, -50%)';
+                wrapEl.className = 'bead-mask-wrap';
+
+                if (i < currentBeads.length) {
+                    const cry = currentBeads[i];
+                    wrapEl.innerHTML = `<div class="crystal-sprite" style="background-position: ${cry.posX}% ${cry.posY}%;"></div>`;
+                    wrapEl.style.boxShadow = '0 6px 16px rgba(40,30,20,0.45)';
+                    container.appendChild(wrapEl);
+                } else {
+                    const emptyEl = document.createElement('div');
+                    emptyEl.style.position = 'absolute';
+                    emptyEl.style.width = `${displaySize * 0.8}px`;
+                    emptyEl.style.height = `${displaySize * 0.8}px`;
+                    emptyEl.style.left = `${x}px`;
+                    emptyEl.style.top = `${y}px`;
+                    emptyEl.style.transform = 'translate(-50%, -50%)';
+                    emptyEl.className = 'rounded-full bg-[#D4C3A3]/50 shadow-[inset_0_3px_6px_rgba(0,0,0,0.18)] border border-[#C5B492]/40';
+                    container.appendChild(emptyEl);
+                }
+            }
+        }
+
+        function renderCrystalSelector() {
+            const container = document.getElementById('crystal-selector');
+            container.innerHTML = crystals.map(c => `
+                <button onclick="addBeadToPlate('${c.id}')" class="p-2 bg-white border border-[#EBE5DA] rounded-xl flex flex-col items-center hover:border-[#2B2520] hover:shadow-sm transition-all group overflow-hidden cursor-pointer">
+                    <div class="bead-mask-wrap" style="width: 64px; height: 64px;">
+                        <div class="crystal-sprite" style="background-position: ${c.posX}% ${c.posY}%;"></div>
+                    </div>
+                    <span class="text-[10px] text-[#3A332C] font-medium mt-2 tracking-tight truncate w-full text-center">${c.name}</span>
+                </button>
+            `).join('');
+        }
+
+        // 扩充后具备5种灵感色系的风格推荐函数
+        function aiRecommendColor(type) {
+            clearCurrentBeads();
+            let pattern = [];
+            if(type === 'aurora') {
+                pattern = ['19', '1', '9', '25']; // 海蓝宝, 白水晶, 紫水晶, 海纹石
+            } else if(type === 'earth') {
+                pattern = ['10', '13', '3', '22']; // 黄水晶, 金发晶, 茶晶, 虎睛石
+            } else if(type === 'forest') {
+                pattern = ['14', '15', '3', '1'];  // 绿幽灵, 葡萄石, 茶晶, 白水晶
+            } else if(type === 'sun') {
+                pattern = ['21', '18', '2', '4'];  // 太阳石, 红纹石, 石榴石, 红胶花
+            } else if(type === 'ocean') {
+                pattern = ['25', '6', '8', '19'];  // 海纹石, 金曜石, 黑发晶, 海蓝宝
+            }
+            
+            let idx = 0;
+            while(currentBeads.length < config.totalBeads) {
+                let targetId = pattern[idx % pattern.length];
+                let targetCry = crystals.find(c => c.id === targetId);
+                if(targetCry) currentBeads.push(targetCry);
+                idx++;
+            }
+            updateUIStatus();
+            renderBeadsOnPlate();
+        }
+
+        function calculateFiveElements() {
+            const dateInput = document.getElementById('astro-date').value;
+            if(!dateInput) { alert('请先选择您的公历出生日期'); return; }
+
+            const dayVal = new Date(dateInput).getDate();
+            const resultPanel = document.getElementById('astro-result');
+            
+            let elementNeed = "喜水 · 补木";
+            let gridName = "水镜太极格";
+            let crystalId = "19"; 
+            let desc = "根据星盘推算，您生辰的天干中‘木’气较为内敛，最适宜清亮深邃之水系晶石。水能生木，能有效为您唤醒潜在直觉，调和磁场。";
+
+            if (dayVal % 3 === 0) {
+                elementNeed = "喜金 · 补土";
+                gridName = "重土蕴金格";
+                crystalId = "13"; 
+                desc = "测算显示您的星位呈‘重土蕴金’之势，土厚而金未显。推荐佩戴耀眼的金发晶，以加强决断力，激活财富之源。";
+            } else if (dayVal % 2 === 0) {
+                elementNeed = "喜火 · 兼木";
+                gridName = "木火通明格";
+                crystalId = "9"; 
+                desc = "您的本命局属于典雅的‘木火通明’格。紫水晶的高频智慧磁场能帮助稳定情绪内核，全面拓宽社交中的贵人缘。";
+            }
+
+            const recommendedCrystal = crystals.find(c => c.id === crystalId);
+            
+            document.getElementById('res-grid-name').innerText = gridName;
+            document.getElementById('res-element-need').innerText = elementNeed;
+            document.getElementById('res-description').innerText = desc;
+            document.getElementById('res-crystal-name').innerText = recommendedCrystal.name;
+            document.getElementById('res-crystal-effect').innerText = recommendedCrystal.meta;
+            document.getElementById('res-crystal-avatar').innerHTML = `
+                <div class="w-full h-full crystal-sprite" style="background-position: ${recommendedCrystal.posX}% ${recommendedCrystal.posY}%;"></div>
+            `;
+
+            resultPanel.classList.remove('hidden');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.className = 'nav-item flex flex-col items-center justify-center flex-1 text-[#9C8F80] hover:text-[#2B2520] cursor-pointer');
+            document.getElementById(`nav-${tabId}`).className = 'nav-item flex flex-col items-center justify-center flex-1 text-[#2B2520] font-medium scale-105 cursor-pointer';
+            
+            document.querySelectorAll('.page-view').forEach(el => {
+                el.classList.add('hidden');
+                if(el.classList.contains('flex')) el.classList.remove('flex'); 
+            });
+            
+            const targetPage = document.getElementById(`view-${tabId}`);
+            targetPage.classList.remove('hidden');
+            if(tabId === 'match') {
+                targetPage.classList.add('flex');
+                setTimeout(renderBeadsOnPlate, 50);
+            }
+            if(tabId === 'assets') {
+                targetPage.classList.add('flex');
+                renderAssets();
+            }
+        }
+
+        function toggleBGM() {
+            const bgm = document.getElementById('bgm');
+            const btn = document.getElementById('bgm-btn');
+            if (isMuted) {
+                bgm.play().catch(()=>{});
+                btn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4"></i>`;
+                btn.classList.add('bg-[#E8E2D5]');
+            } else {
+                bgm.pause();
+                btn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4"></i>`;
+                btn.classList.remove('bg-[#E8E2D5]');
+            }
+            isMuted = !isMuted;
+            lucide.createIcons();
+        }
+
+        function saveToAssets() {
+            if(currentBeads.length < config.totalBeads) return;
+            mySavedAssets.push({
+                id: Date.now(),
+                name: `北欧手作工坊 · 定制款 [${currentBeads.length}颗]`,
+                wrist: config.wrist,
+                bead: config.bead,
+                beadsData: [...currentBeads]
+            });
+            alert('🌟 款式设计成功！已完美记录至您的数字资产库。');
+            currentAssetIndex = mySavedAssets.length - 1; // 默认对齐到最新保存的这一个
+            clearCurrentBeads();
+        }
+
+        // 在“我的资产”页面内完全复原并渲染圆盘以及左右切换功能
+        function renderAssets() {
+            const emptyEl = document.getElementById('assets-empty');
+            const wrapperEl = document.getElementById('assets-display-wrapper');
+            const carousel = document.getElementById('assets-carousel');
+            
+            if(mySavedAssets.length === 0) {
+                emptyEl.classList.remove('hidden');
+                wrapperEl.classList.add('hidden');
+                return;
+            }
+            
+            emptyEl.classList.add('hidden');
+            wrapperEl.classList.remove('hidden');
+            
+            // 校准索引边界
+            if(currentAssetIndex >= mySavedAssets.length) currentAssetIndex = mySavedAssets.length - 1;
+            if(currentAssetIndex < 0) currentAssetIndex = 0;
+            
+            document.getElementById('asset-carousel-indicator').innerText = `${currentAssetIndex + 1} / ${mySavedAssets.length}`;
+            
+            const currentAsset = mySavedAssets[currentAssetIndex];
+            
+            // 动态构建包含独立一模一样的大珠盘卡片
+            carousel.innerHTML = `
+                <div class="snap-center shrink-0 w-full max-w-md bg-[#F2ECE0] border border-[#E5DCBE] rounded-2xl p-4 flex flex-col items-center justify-center relative shadow-sm">
+                    <div class="w-full text-center mb-3">
+                        <span class="text-[10px] text-[#9C8F80] uppercase tracking-widest block">手作典藏物权档案</span>
+                        <h4 class="text-xs font-bold text-[#2B2520] mt-0.5">${currentAsset.name}</h4>
+                        <p class="text-[9px] text-[#736453] mt-0.5">净手围 ${currentAsset.wrist} cm · 矿石直径 ${currentAsset.bead} mm</p>
+                    </div>
+
+                    <div id="asset-wood-plate" class="relative w-72 h-72 md:w-80 md:h-80 rounded-full bg-[#E5DCBE] shadow-[inset_0_4px_12px_rgba(0,0,0,0.06),0_12px_36px_rgba(40,30,20,0.12)] flex items-center justify-center border-4 border-[#DCD1B1]">
+                        <div class="absolute w-[88%] h-[88%] rounded-full bg-[#E8E0C4] shadow-inner"></div>
+                        <div class="absolute w-[76%] h-[76%] rounded-full border-[22px] border-[#DECFA4] opacity-40 shadow-[inset_0_3px_10px_rgba(0,0,0,0.08)]"></div>
+                        
+                        <div class="absolute w-24 h-24 bg-[#DECFA4] rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,0.1)] z-0 flex flex-col items-center justify-center border border-[#CEBF93]">
+                            <span class="text-[9px] font-bold tracking-widest text-[#2B2520]">已手作归档</span>
+                            <span class="text-[10px] font-medium text-[#736453] mt-0.5">${currentAsset.beadsData.length} 颗原矿</span>
+                        </div>
+
+                        <div id="asset-beads-container" class="absolute inset-0 z-10 pointer-events-none"></div>
+                    </div>
+                </div>
+            `;
+            
+            // 动态绘制该张物权卡片里面的珠子
+            setTimeout(() => {
+                const container = document.getElementById('asset-beads-container');
+                const plate = document.getElementById('asset-wood-plate');
+                if(!container || !plate) return;
+                
+                const total = currentAsset.beadsData.length;
+                const plateWidth = plate.offsetWidth;
+                const centerX = plateWidth / 2;
+                const centerY = plateWidth / 2;
+                const baseRadius = plateWidth * 0.34;
+                const displaySize = Math.max(28, currentAsset.bead * 3.1); // 微调使在我的资产页显示更为饱满精致
+                
+                for(let i = 0; i < total; i++) {
+                    const angle = (i * 2 * Math.PI) / total - Math.PI / 2;
+                    const x = centerX + baseRadius * Math.cos(angle);
+                    const y = centerY + baseRadius * Math.sin(angle);
+                    
+                    const wrapEl = document.createElement('div');
+                    wrapEl.style.position = 'absolute';
+                    wrapEl.style.width = `${displaySize}px`;
+                    wrapEl.style.height = `${displaySize}px`;
+                    wrapEl.style.left = `${x}px`;
+                    wrapEl.style.top = `${y}px`;
+                    wrapEl.style.transform = 'translate(-50%, -50%)';
+                    wrapEl.className = 'bead-mask-wrap';
+                    
+                    const cry = currentAsset.beadsData[i];
+                    wrapEl.innerHTML = `<div class="crystal-sprite" style="background-position: ${cry.posX}% ${cry.posY}%;"></div>`;
+                    wrapEl.style.boxShadow = '0 5px 12px rgba(40,30,20,0.4)';
+                    container.appendChild(wrapEl);
+                }
+            }, 25);
+            
+            lucide.createIcons();
+        }
+
+        // 控制左右横向切换查看资产的指针逻辑
+        function moveAssetCarousel(direction) {
+            if(mySavedAssets.length === 0) return;
+            currentAssetIndex += direction;
+            if(currentAssetIndex >= mySavedAssets.length) currentAssetIndex = 0; // 循环循环
+            if(currentAssetIndex < 0) currentAssetIndex = mySavedAssets.length - 1;
+            renderAssets();
+        }
+    </script>
+</body>
+</html>
