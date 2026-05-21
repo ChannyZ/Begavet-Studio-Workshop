@@ -12,7 +12,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* ==================== 雪碧图放大裁剪 ==================== */
+        /* ==================== 雪碧图放大裁剪与防压扁机制 ==================== */
         .crystal-sprite {
             background-image: url('crystals.jpg'); 
             background-size: 565% 585%; 
@@ -27,21 +27,23 @@
             transition: transform 0.2s ease;
         }
 
+        /* 核心防挤压：锁定1:1绝对正圆宽高比 */
         .bead-mask-wrap {
             border-radius: 50%;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: block;
+            position: relative;
             background: #fff;
             border: 1px solid rgba(43, 37, 32, 0.1);
+            aspect-ratio: 1 / 1 !important; 
+            box-sizing: border-box;
         }
 
         #crystal-selector button:hover .crystal-sprite {
             transform: scale(1.7);
         }
 
-        /* 手机移动端底部抽屉弹窗强制覆盖机制 */
+        /* 手机移动端：半透明悬浮吸底抽屉机制（高度砍半，露出上方实时珠盘） */
         @media (max-width: 767px) {
             .mobile-drawer-hide {
                 transform: translateY(100%) !important;
@@ -65,7 +67,7 @@
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
                 <div>
                     <h1 class="text-xl font-medium tracking-widest text-[#2B2520]">灵感工坊</h1>
-                    <p class="text-[10px] text-[#9C8F80] tracking-wider mt-0.5">几何向心重构 · 确保绝对规则圆环与巨型璀璨切片</p>
+                    <p class="text-[10px] text-[#9C8F80] tracking-wider mt-0.5">几何向心重构 · 确保绝对规则圆环与正圆晶石颗粒</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button onclick="toggleBGM()" id="bgm-btn" class="p-2.5 bg-[#E8E2D5] hover:bg-[#E8E1D2] rounded-full text-[#54493F] transition-all cursor-pointer" title="控制背景音乐">
@@ -114,53 +116,47 @@
                     </div>
                 </div>
 
-                <div id="drawer-overlay" onclick="closeDrawer()" class="hidden fixed inset-0 bg-black/50 z-50 backdrop-blur-xs transition-opacity md:hidden"></div>
+                <div id="drawer-overlay" onclick="closeDrawer()" class="hidden fixed inset-0 bg-transparent z-40 md:hidden"></div>
 
-                <div id="crystal-drawer" class="fixed bottom-0 left-0 right-0 max-h-[85vh] rounded-t-[28px] bg-[#FCFAF7] p-5 border-t border-[#EBE5DA] flex flex-col gap-3 z-50 transition-all duration-300 ease-out mobile-drawer-hide md:static md:translate-y-0 md:opacity-100 md:pointer-events-auto md:border-t-0 md:border-l md:p-4 md:w-80 md:z-auto md:overflow-hidden">
+                <div id="crystal-drawer" class="fixed bottom-0 left-0 right-0 h-[52vh] max-h-[52vh] rounded-t-[32px] bg-[#FCFAF7]/90 backdrop-blur-xl p-4 border-t border-[#EBE5DA] flex flex-col gap-2.5 z-50 transition-all duration-300 ease-out mobile-drawer-hide shadow-[0_-10px_30px_rgba(43,37,32,0.15)] md:static md:h-auto md:max-h-none md:translate-y-0 md:opacity-100 md:pointer-events-auto md:border-t-0 md:border-l md:p-4 md:w-80 md:z-auto md:overflow-hidden md:bg-[#FCFAF7] md:shadow-none md:backdrop-blur-none">
                     
-                    <div class="w-12 h-1.5 bg-[#E8E2D5] rounded-full mx-auto mb-1 flex-shrink-0 md:hidden" onclick="closeDrawer()"></div>
+                    <div class="w-12 h-1 bg-[#E8E2D5] rounded-full mx-auto mb-0.5 flex-shrink-0 md:hidden" onclick="closeDrawer()"></div>
 
                     <div class="flex justify-between items-center flex-shrink-0">
-                        <h3 class="text-xs font-bold text-[#6E6152] tracking-widest">原图晶石图鉴 (点击入盘)</h3>
+                        <h3 class="text-xs font-bold text-[#6E6152] tracking-widest">原图晶石图鉴 (点击实时入盘)</h3>
                         <div class="flex items-center gap-3">
                             <button onclick="clearCurrentBeads()" class="text-[10px] text-[#9C8F80] hover:text-red-500 underline tracking-wider cursor-pointer">清空</button>
-                            <button onclick="closeDrawer()" class="text-xs text-red-600 font-bold px-2 py-0.5 bg-red-50 rounded-md md:hidden cursor-pointer">关闭</button>
+                            <button onclick="closeDrawer()" class="text-xs text-red-600 font-bold px-2 py-0.5 bg-red-50 rounded-md md:hidden cursor-pointer">收起</button>
                         </div>
                     </div>
                     
-                    <div class="flex-1 grid grid-cols-3 gap-2 overflow-y-auto no-scrollbar pr-1 max-h-[42vh] md:max-h-none" id="crystal-selector"></div>
+                    <div class="flex-1 grid grid-cols-3 gap-2 overflow-y-auto no-scrollbar pr-1" id="crystal-selector"></div>
                     
-                    <div class="bg-[#F2EDE2]/60 border border-[#E3D9C8] rounded-xl p-3 space-y-2 flex-shrink-0">
-                        <div class="flex items-center gap-1.5 text-xs font-bold text-[#54493F]">
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-600 animate-pulse"></i>
+                    <div class="bg-[#F2EDE2]/70 border border-[#E3D9C8] rounded-xl p-2.5 space-y-1 flex-shrink-0">
+                        <div class="flex items-center gap-1.5 text-[11px] font-bold text-[#54493F]">
+                            <i data-lucide="sparkles" class="w-3 h-3 text-amber-600 animate-pulse"></i>
                             <span>AI 智能工坊助手</span>
                         </div>
-                        <p class="text-[10px] text-[#8C7E6E] leading-relaxed">提供更多自动检索校准推荐色系：</p>
-                        <div class="grid grid-cols-1 gap-1.5 pt-0.5 max-h-28 md:max-h-36 overflow-y-auto no-scrollbar">
-                            <button onclick="handleAIRecommend('aurora')" class="text-[10px] bg-white border border-[#E3D9C8] py-1.5 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                        <div class="grid grid-cols-1 gap-1 max-h-16 md:max-h-36 overflow-y-auto no-scrollbar">
+                            <button onclick="handleAIRecommend('aurora')" class="text-[9px] bg-white border border-[#E3D9C8] py-1 px-1.5 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between cursor-pointer">
                                 <span>✨ 空灵极光系 (海蓝/白水/紫晶)</span>
-                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                             </button>
-                            <button onclick="handleAIRecommend('earth')" class="text-[10px] bg-white border border-[#E3D9C8] py-1.5 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                            <button onclick="handleAIRecommend('earth')" class="text-[9px] bg-white border border-[#E3D9C8] py-1 px-1.5 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between cursor-pointer">
                                 <span>🌾 大地丰收系 (黄晶/金发/虎睛)</span>
-                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                             </button>
-                            <button onclick="handleAIRecommend('forest')" class="text-[10px] bg-white border border-[#E3D9C8] py-1.5 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                            <button onclick="handleAIRecommend('forest')" class="text-[9px] bg-white border border-[#E3D9C8] py-1 px-1.5 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between cursor-pointer">
                                 <span>🌿 幽谷流萤系 (绿幽灵/葡萄石/茶晶)</span>
-                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                             </button>
-                            <button onclick="handleAIRecommend('sun')" class="text-[10px] bg-white border border-[#E3D9C8] py-1.5 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                            <button onclick="handleAIRecommend('sun')" class="text-[9px] bg-white border border-[#E3D9C8] py-1 px-1.5 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between cursor-pointer">
                                 <span>☀️ 炽热骄阳系 (太阳石/红纹/石榴)</span>
-                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                             </button>
-                            <button onclick="handleAIRecommend('ocean')" class="text-[10px] bg-white border border-[#E3D9C8] py-1.5 px-2 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between group cursor-pointer">
+                            <button onclick="handleAIRecommend('ocean')" class="text-[9px] bg-white border border-[#E3D9C8] py-1 px-1.5 rounded-md hover:border-[#2B2520] transition-all text-left truncate flex items-center justify-between cursor-pointer">
                                 <span>🌊 深海静谧系 (海纹石/金曜/黑发)</span>
-                                <i data-lucide="chevron-right" class="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                             </button>
                         </div>
                     </div>
 
-                    <button id="btn-save-asset" onclick="saveToAssets()" disabled class="w-full bg-[#C2BBB0] text-[#FCFAF7] py-3 rounded-xl text-xs tracking-widest cursor-not-allowed transition-all flex-shrink-0">
+                    <button id="btn-save-asset" onclick="saveToAssets()" disabled class="w-full bg-[#C2BBB0] text-[#FCFAF7] py-2.5 rounded-xl text-xs tracking-widest cursor-not-allowed transition-all flex-shrink-0">
                         <i data-lucide="lock" class="w-3.5 h-3.5 inline mr-1"></i>填满方可保存款式
                     </button>
                 </div>
@@ -262,7 +258,6 @@
     <script>
         lucide.createIcons();
 
-        // 核心原石基础数据谱系
         const crystals = [
             { id: '1', name: '白水晶', posX: -0.8, posY: -0.5, meta: '纯净之石 · 放大全局气场' },
             { id: '2', name: '石榴石', posX: 24.3, posY: -0.5, meta: '红润之石 · 滋养元气与气血' },
@@ -292,7 +287,6 @@
         let mySavedAssets = [];
         let currentAssetIndex = 0;
         
-        // 全局疗愈大自然白噪音音频流
         const bgm = new Audio("https://assets.mixkit.co/active_storage/sfx/2433/2433-200.wav");
         bgm.loop = true;
         bgm.volume = 0.4;
@@ -308,7 +302,6 @@
             renderCrystalSelector();
             calculateMaxBeads();
             
-            // 监听手势解锁移动端白噪音
             document.body.addEventListener('click', startBGMOnInteraction, { once: true });
             document.body.addEventListener('touchstart', startBGMOnInteraction, { once: true });
             
@@ -330,7 +323,6 @@
             };
         };
 
-        // 手机移动端底部抽屉显示/隐藏函数修正
         function openDrawer() {
             const drawer = document.getElementById('crystal-drawer');
             const overlay = document.getElementById('drawer-overlay');
@@ -353,9 +345,6 @@
 
         function handleAIRecommend(type) {
             aiRecommendColor(type);
-            if (window.innerWidth < 768) {
-                closeDrawer();
-            }
         }
 
         function calculateMaxBeads() {
@@ -377,13 +366,13 @@
             if(currentBeads.length >= config.totalBeads && config.totalBeads > 0) {
                 saveBtn.disabled = false;
                 saveBtn.innerText = "💾 保存此款式";
-                saveBtn.className = "w-full bg-[#2B2520] text-white py-3 rounded-xl text-xs tracking-widest hover:bg-[#1C1815] transition-all cursor-pointer shadow-md";
+                saveBtn.className = "w-full bg-[#2B2520] text-white py-2.5 rounded-xl text-xs tracking-widest hover:bg-[#1C1815] transition-all cursor-pointer shadow-md";
                 document.getElementById('match-status').innerText = "已填满";
                 document.getElementById('match-status').className = "text-[10px] font-bold tracking-widest text-green-700";
             } else {
                 saveBtn.disabled = true;
                 saveBtn.innerText = `还差 ${config.totalBeads - currentBeads.length} 颗填满`;
-                saveBtn.className = "w-full bg-[#C2BBB0] text-[#FCFAF7] py-3 rounded-xl text-xs tracking-widest cursor-not-allowed";
+                saveBtn.className = "w-full bg-[#C2BBB0] text-[#FCFAF7] py-2.5 rounded-xl text-xs tracking-widest cursor-not-allowed";
                 document.getElementById('match-status').innerText = "正在设计";
                 document.getElementById('match-status').className = "text-[10px] font-medium tracking-widest text-[#736453]";
             }
@@ -452,10 +441,10 @@
             const container = document.getElementById('crystal-selector');
             container.innerHTML = crystals.map(c => `
                 <button onclick="addBeadToPlate('${c.id}')" class="p-2 bg-white border border-[#EBE5DA] rounded-xl flex flex-col items-center hover:border-[#2B2520] hover:shadow-sm transition-all group overflow-hidden cursor-pointer">
-                    <div class="bead-mask-wrap w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16">
+                    <div class="bead-mask-wrap w-11 h-11 sm:w-13 sm:h-13 md:w-15 md:h-15 w-full">
                         <div class="crystal-sprite" style="background-position: ${c.posX}% ${c.posY}%;"></div>
                     </div>
-                    <span class="text-[10px] text-[#3A332C] font-medium mt-1.5 tracking-tight truncate w-full text-center">${c.name}</span>
+                    <span class="text-[10px] text-[#3A332C] font-medium mt-1 tracking-tight truncate w-full text-center">${c.name}</span>
                 </button>
             `).join('');
         }
